@@ -1,82 +1,91 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import cloud from '../images/Clouds.png';
 import rain from '../images/Rain.png';
 import clear from '../images/Clear.png';
 import mist from '../images/Mist.png';
 import drizzle from '../images/Drizzle.png';
-
 import err from '../images/Error.png';
-
 
 const Myapp = () => {
     const [search, setSearch] = useState("");
-    const [data, setData] = useState();
-    const [error, setError] = useState();
+    const [data, setData] = useState(null);
+    const [error, setError] = useState("");
 
-    const API_KEY = "8d5beb8d71b9f817b0cff4799e2a2437";
-    const API = "https://api.openweathermap.org/data/2.5/weather?q={city name}&appid={API key}";
+    // Use the API key from environment variables
+    const API_KEY = process.env.REACT_APP_API_KEY;
 
     const handleInput = (e) => {
-        setSearch(e.target.value)
-        console.log(e.target.value);
-    }
+        setSearch(e.target.value);
+    };
 
     const myFun = async () => {
-        const get = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${search}&appid=${API_KEY}&units=metric`);
-        const jsonData = await get.json()
-        console.log(jsonData);
-        setData(jsonData);
-
         if (search === "") {
-            setError("Please enter name")
+            setError("Please enter a city name.");
+            return;
         }
-        else if(jsonData.cod === 404){
-            setError("Please enter valid name !")
-        }
-        else{
-            setError("")
-        }
-        setSearch("")
 
-    }
+        try {
+            const get = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${search}&appid=${API_KEY}&units=metric`);
+            const jsonData = await get.json();
+            console.log(jsonData);
+
+            if (jsonData.cod === "404") {
+                setError("Please enter a valid city name!");
+                setData(null);
+            } else {
+                setData(jsonData);
+                setError("");
+            }
+        } catch (err) {
+            setError("An error occurred while fetching data.");
+        }
+
+        setSearch("");
+    };
 
     return (
         <>
             <div className="container">
                 <div className="inputs">
-                    <input placeholder='Enter city, country' onChange={handleInput} value={search} />
-                    <button onClick={myFun}><i className="fa-solid fa-magnifying-glass"></i></button>
+                    <input 
+                        placeholder='Enter city, country'
+                        onChange={handleInput}
+                        value={search}
+                    />
+                    <button onClick={myFun}>
+                        <i className="fa-solid fa-magnifying-glass"></i>
+                    </button>
                 </div>
                 <div>
                     {
-                        error ? 
+                        error && 
                         <div className='errorPage'>
                             <p>{error}</p>
-                            <img src={err} alt='error pic' />
-                        </div> : ""
+                            <img src={err} alt='Error' />
+                        </div>
                     }
 
-
                     {
-                        data && data.weather ?
-                        <div className='weathers'>
-                            <h2 className='cityName'>{data.name}</h2>
-                            <img src={data.weather[0].main === "Clouds" ? cloud : "" } alt='' />
-                            <img src={data.weather[0].main === "Rain" ? rain : "" } alt='' />
-                            <img src={data.weather[0].main === "Clear" ? clear : "" } alt='' />
-                            <img src={data.weather[0].main === "Mist" ? mist : "" } alt='' />
-                            <img src={data.weather[0].main ==="Haze" ? cloud : "" } alt='' />
-                            <img src={data.weather[0].main ==="Drizzle" ? drizzle : "" } alt='' />
+                        data && data.weather && (
+                            <div className='weathers'>
+                                <h2 className='cityName'>{data.name}</h2>
 
-                            <h2 className='temprature'>{Math.trunc(data.main.temp)} °C</h2>
-                            <p className='climate'>{data.weather[0].description}</p>
-                        </div> : ""
+                                <img src={data.weather[0].main === "Clouds" ? cloud : "" } alt='' />
+                                <img src={data.weather[0].main === "Rain" ? rain : "" } alt='' />
+                                <img src={data.weather[0].main === "Clear" ? clear : "" } alt='' />
+                                <img src={data.weather[0].main === "Mist" ? mist : "" } alt='' />
+                                <img src={data.weather[0].main === "Haze" ? cloud : "" } alt='' />
+                                <img src={data.weather[0].main === "Drizzle" ? drizzle : "" } alt='' />
 
+                                <h2 className='temprature'>{Math.trunc(data.main.temp)} °C</h2>
+                                <p className='climate'>{data.weather[0].description}</p>
+                            </div>
+                        )
                     }
                 </div>
             </div>
         </>
-    )
-}
+    );
+};
 
-export default Myapp
+export default Myapp;
